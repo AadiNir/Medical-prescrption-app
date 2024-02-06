@@ -98,34 +98,3 @@ ui <- fluidPage(
     )
   ),
   tags$script('
-    $(document).ready(function() {
-      $("#startButton").on("click", function() {
-        var recognition = new webkitSpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        
-        recognition.onresult = function(event) {
-          var speechResult = event.results[0][0].transcript;
-          Shiny.setInputValue("speechInput", speechResult);
-        }
-        
-        recognition.start();
-      });
-    });
-  ')
-)
-
-server <- function(input, output) {
-  output$output <- renderText({
-    input$speechInput
-  })
-  
-  observeEvent(input$speechInput, {
-    if (!is.null(input$speechInput)) {
-      writeLines(isolate(input$speechInput), "E:/ALGORITHMS AND DSA/FDA PROJECT/output.txt")
-    }
-  })
-}
-
-shinyApp(ui, server)
-
