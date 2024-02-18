@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Prescription</title>
+</head>
+<body>
+    <h1>Speech Prescription</h1>
+    <div id="output"></div>
+    <input type="file" accept="audio/*" id="audioInput">
+    <button onclick="submitAudio()">Submit</button>
+
+    <script>
+        function submitAudio() {
+            var audioFile = document.getElementById('audioInput').files[0];
+            var formData = new FormData();
+            formData.append('audio', audioFile);
+
+            fetch('/prescription', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('output').innerText = data.message;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>

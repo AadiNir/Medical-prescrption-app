@@ -1,3 +1,5 @@
-Patient Name: headache and cough
-Syndrome: Dolo 350 corrosion and Strepsils
-Medication: second feb2020
+Date:2024
+Patient Name: Aditya Niranjan
+Gender:mailSyndrome: cough and cold
+Medication: Ayurveda
+recommended diet: goggles saltwater
