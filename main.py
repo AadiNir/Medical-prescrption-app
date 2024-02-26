@@ -26,7 +26,7 @@ def speech_to_text():
     response_message = openai.ChatCompletion.create(model=model, messages=message_list, temperature=temperature)
 
     response = response_message.choices[0].message.content
-
+    print(recognized_text)
     return response, 200
 
 def recognize_audio(audio_file):
