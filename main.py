@@ -1,21 +1,39 @@
 from flask import Flask, request
 import openai
+import soundfile as sf
+import time
+
+
 
 app = Flask(__name__)
 
 @app.route('/speech-to-text', methods=['POST'])
 def speech_to_text():
     # Check if the request contains audio data
-    if 'audio' not in request.files:
+    if 'audioBlob' not in request.files:
         return "No audio file provided", 400
-    
+        
     # Get the audio file from the request
-    audio_file = request.files['audio']
+    audio_file = request.files['audioBlob']
+
+    # Save the audio file to disk
+    filename = f'audio_{int(time.time())}.wav'  # Use current timestamp
+    audio_file.save(filename)
+
+    # Read the saved audio file
+    try:
+        audio_data, sample_rate = sf.read(filename)
+    except Exception as e:
+        return f"Error reading audio file: {str(e)}", 500
+
+    # Optionally, you may want to process the audio data or perform speech-to-text conversion here
+
+    return "Audio file uploaded and read successfully", 200
 
     # Process the audio file
-    recognized_text = recognize_audio(audio_file)
+    recognized_text = recognize_audio(filename)
 
-    openai.api_key = "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"
+    openai.api_key = "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"
     model = "gpt-3.5-turbo"
     temperature = 0.9
     message_list = []
