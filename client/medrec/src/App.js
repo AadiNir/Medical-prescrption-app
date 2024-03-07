@@ -1,79 +1,76 @@
-import React, { useState, useRef } from 'react';
-import audioMetadata from 'audio-metadata';
-import xhr from 'xhr';
-import { audioBufferToWav } from 'audiobuffer-to-wav';
+import React, { useState } from 'react';
 
-function App() {
+const AudioRecorderAndDownloader = () => {
   const [recording, setRecording] = useState(false);
   const [audioChunks, setAudioChunks] = useState([]);
-
-  const mediaRecorderRef = useRef(null); // Use useRef for mediaRecorder
+  const [audioUrl, setAudioUrl] = useState('');
+  const [mediaRecorder, setMediaRecorder] = useState(null);
 
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      mediaRecorderRef.current.ondataavailable = handleDataAvailable;
-      mediaRecorderRef.current.start();
+      const recorder = new MediaRecorder(stream);
+
+      recorder.ondataavailable = event => {
+        setAudioChunks([...audioChunks, event.data]);
+      };
+
+      recorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        const url = URL.createObjectURL(audioBlob);
+        setAudioUrl(url);
+      };
+
+      recorder.start();
       setRecording(true);
-    } catch (err) {
-      console.error('Error accessing microphone:', err);
+      setMediaRecorder(recorder);
+    } catch (error) {
+      console.error('Error accessing microphone:', error);
     }
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop();
+    if (mediaRecorder) {
+      mediaRecorder.stop();
       setRecording(false);
     }
   };
 
-  const handleDataAvailable = (event) => {
-    if (event.data.size > 0) {
-      setAudioChunks([...audioChunks, event.data]);
+  const downloadAudio = () => {
+    if (audioUrl) {
+      // Create a link element
+      const link = document.createElement('a');
+      link.href = audioUrl;
+      link.download = 'recorded_audio.wav'; // Set the file name for download
+      document.body.appendChild(link);
+
+      // Click the link to initiate download
+      link.click();
+
+      // Clean up: remove the link
+      document.body.removeChild(link);
+
+      // Revoke the object URL
+      URL.revokeObjectURL(audioUrl);
     }
-  };
-
-  const handleDownload = async () => {
-    if (audioChunks.length === 0) return;
-
-    const filename = `recording-${Date.now()}.wav`; // Generate unique filename
-
-    // const metadata = await audioMetadata(audioBlob);
-      // const convertedBlob = await audioMetadata.toBlob(audioBlob, 'flac', metadata);
-    // const url = URL.createObjectURL(audioBlob);
-    // const link = document.createElement('a');
-    // link.href = url;
-    // link.download = filename;
-    // link.click();
-
-// Assuming you have audioChunks containing the audio data
-// Convert audio data to an AudioBuffer (assuming mono audio at 44100 Hz)
-const audioContext = new AudioContext();
-const audioBuffer = audioContext.createBuffer(1, audioChunks.length, 44100);
-audioBuffer.copyToChannel(new Float32Array(audioChunks), 0);
-
-// Convert AudioBuffer to WAV file
-const wavBlob = audioBufferToWav(audioBuffer);
-
-// Create a Blob from the WAV data
-const audioBlob = new Blob([wavBlob], { type: 'audio/wav' });
-
-    // // Optional cleanup (remove the link and revoke the object URL)
-    // URL.revokeObjectURL(url);
-    // link.remove();
   };
 
   return (
     <div>
+      <h1>Audio Recorder and Downloader</h1>
       <button onClick={recording ? stopRecording : startRecording}>
         {recording ? 'Stop Recording' : 'Start Recording'}
       </button>
-      <button onClick={handleDownload} disabled={!audioChunks.length}>
-        Download Recording
+      <button onClick={downloadAudio} disabled={!audioUrl}>
+        Download Recorded Audio
       </button>
+      {audioUrl && (
+        <div>
+          <audio controls src={audioUrl}></audio>
+        </div>
+      )}
     </div>
   );
-}
+};
 
-export default App;
+export default AudioRecorderAndDownloader;
