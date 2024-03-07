@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import audioMetadata from 'audio-metadata';
+import xhr from 'xhr';
+import { audioBufferToWav } from 'audiobuffer-to-wav';
 
 function App() {
   const [recording, setRecording] = useState(false);
@@ -35,17 +37,27 @@ function App() {
   const handleDownload = async () => {
     if (audioChunks.length === 0) return;
 
-    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-    const filename = `recording-${Date.now()}.flac`; // Generate unique filename
+    const filename = `recording-${Date.now()}.wav`; // Generate unique filename
 
-    const metadata = await audioMetadata(audioBlob);
-      const convertedBlob = await audioMetadata.toBlob(audioBlob, 'flac', metadata);
-    // const url = URL.createObjectURL(convertedBlob);
+    // const metadata = await audioMetadata(audioBlob);
+      // const convertedBlob = await audioMetadata.toBlob(audioBlob, 'flac', metadata);
+    // const url = URL.createObjectURL(audioBlob);
     // const link = document.createElement('a');
     // link.href = url;
     // link.download = filename;
     // link.click();
-    console.log(convertedBlob);
+
+// Assuming you have audioChunks containing the audio data
+// Convert audio data to an AudioBuffer (assuming mono audio at 44100 Hz)
+const audioContext = new AudioContext();
+const audioBuffer = audioContext.createBuffer(1, audioChunks.length, 44100);
+audioBuffer.copyToChannel(new Float32Array(audioChunks), 0);
+
+// Convert AudioBuffer to WAV file
+const wavBlob = audioBufferToWav(audioBuffer);
+
+// Create a Blob from the WAV data
+const audioBlob = new Blob([wavBlob], { type: 'audio/wav' });
 
     // // Optional cleanup (remove the link and revoke the object URL)
     // URL.revokeObjectURL(url);

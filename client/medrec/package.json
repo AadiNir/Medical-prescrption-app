@@ -3,17 +3,23 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.10",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "audio-metadata": "^0.3.0",
+    "audiobuffer-to-wav": "^1.0.0",
     "axios": "^1.6.7",
     "file-saver": "^2.0.5",
+    "os-browserify": "^0.3.0",
+    "pcm-util": "^3.0.0",
+    "pcmjs": "^0.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
     "recorder-js": "^1.0.7",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "xhr": "^2.6.0"
   },
   "scripts": {
     "start": "react-scripts start",
