@@ -1,76 +1,66 @@
 import React, { useState } from 'react';
+import Recorder from 'recorder-js'; // Make sure to import the Recorder.js library
 
-const AudioRecorderAndDownloader = () => {
-  const [recording, setRecording] = useState(false);
-  const [audioChunks, setAudioChunks] = useState([]);
-  const [audioUrl, setAudioUrl] = useState('');
-  const [mediaRecorder, setMediaRecorder] = useState(null);
+function AudioRecorder() {
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingUrl, setRecordingUrl] = useState('');
+  const [recorderInstance, setRecorderInstance] = useState(null);
 
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
-
-      recorder.ondataavailable = event => {
-        setAudioChunks([...audioChunks, event.data]);
-      };
-
-      recorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        const url = URL.createObjectURL(audioBlob);
-        setAudioUrl(url);
-      };
-
-      recorder.start();
-      setRecording(true);
-      setMediaRecorder(recorder);
-    } catch (error) {
-      console.error('Error accessing microphone:', error);
-    }
+  const startRecording = () => {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        const audioContext = new AudioContext();
+        const input = audioContext.createMediaStreamSource(stream);
+        const recorder = new window.Recorder(input, { numChannels: 1 });
+  
+        // Store the recorder instance in state
+        setRecorderInstance(recorder);
+  
+        // Start recording
+        recorder.record();
+  
+        // Update the recording state
+        setIsRecording(true);
+      })
+      .catch(error => {
+        console.error('Error accessing microphone:', error);
+      });
   };
+  
 
   const stopRecording = () => {
-    if (mediaRecorder) {
-      mediaRecorder.stop();
-      setRecording(false);
+    if (recorderInstance) {
+      recorderInstance.stop();
+      setIsRecording(false);
+      recorderInstance.exportWAV(createDownloadLink);
     }
   };
 
-  const downloadAudio = () => {
-    if (audioUrl) {
-      // Create a link element
-      const link = document.createElement('a');
-      link.href = audioUrl;
-      link.download = 'recorded_audio.wav'; // Set the file name for download
-      document.body.appendChild(link);
-
-      // Click the link to initiate download
-      link.click();
-
-      // Clean up: remove the link
-      document.body.removeChild(link);
-
-      // Revoke the object URL
-      URL.revokeObjectURL(audioUrl);
-    }
+  const createDownloadLink = (blob) => {
+    const url = URL.createObjectURL(blob);
+    setRecordingUrl(url);
   };
 
   return (
     <div>
-      <h1>Audio Recorder and Downloader</h1>
-      <button onClick={recording ? stopRecording : startRecording}>
-        {recording ? 'Stop Recording' : 'Start Recording'}
-      </button>
-      <button onClick={downloadAudio} disabled={!audioUrl}>
-        Download Recorded Audio
-      </button>
-      {audioUrl && (
+      <h1>Simple Recorder.js demo</h1>
+      <p><small>Made by the <a href="https://addpipe.com" target="_blank" rel="noopener noreferrer">Pipe Video Recording Platform</a></small></p>
+      <p>This demo uses <a href="https://github.com/mattdiamond/Recorderjs" target="_blank" rel="noopener noreferrer">Recorder.js</a> to record wav/PCM audio directly in the browser.</p>
+      <div id="controls">
+        {!isRecording ? (
+          <button onClick={startRecording}>Record</button>
+        ) : (
+          <button onClick={stopRecording}>Stop</button>
+        )}
+      </div>
+      {recordingUrl && (
         <div>
-          <audio controls src={audioUrl}></audio>
+          <audio controls src={recordingUrl}></audio>
+          <a href={recordingUrl} download="recording.wav">Download Recording</a>
         </div>
       )}
     </div>
   );
-};
+}
 
-export default AudioRecorderAndDownloader;
+export default AudioRecorder;

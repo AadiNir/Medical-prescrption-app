@@ -1,6 +1,6 @@
-from flask import Flask, request
+from flask import Flask, request, send_file
 import openai
-import soundfile as sf
+# import soundfile as sf
 import time
 import os
 
@@ -8,59 +8,61 @@ from pydub import AudioSegment
 
 
 app = Flask(__name__)
-def convert(m4a_file):
-    # Check if the file exists
-    if not os.path.exists(m4a_file):
-        return {'error': 'File not found'}
+    # m4a_file = '1.m4a'
 
-    # Check file extension
-    if not m4a_file.endswith('.m4a'):
-        return {'error': 'Invalid file format'}
+def fix_corrupted_wav(input_wav_file, output_wav_file):
+    try:
+        # Load the potentially corrupted .wav file
+        audio = AudioSegment.from_wav(input_wav_file)
 
-    # Convert M4A to WAV
-    audio = AudioSegment.from_file(m4a_file)
-    wav_filename = os.path.splitext(m4a_file)[0] + '.wav'  # Change the extension to .wav
-    audio.export(wav_filename, format='wav')
+        # Check if the audio can be loaded without errors
+        if audio:
+            # Export the audio as a normal .wav file
+            audio.export(output_wav_file, format="wav")
+            print("successfull")
+            return True
+    except Exception as e:
+        print(f"Error fixing corrupted WAV file: {e}")
+    return False
 
-    return {'success': True, 'wav_filename': wav_filename}
+# Example usage
+input_wav_file = "C:/Users/HP/Downloads/recorded_audio_.wav"
+output_wav_file = "fixed.wav"
+if fix_corrupted_wav(input_wav_file, output_wav_file):
+    print("Corrupted WAV file fixed successfully.")
+    # Now you can proceed with processing the fixed WAV file
+else:
+    print("Failed to fix corrupted WAV file. Unable to proceed.")
+# Call the function to check AudioSegment
 @app.route('/speech-to-text', methods=['POST'])
 def speech_to_text():
     # Check if the request contains audio data
     
         
-    # Get the audio file from the request
-    audio_file = request.files['audio']
+    file = request.files['audio']
+    # output_wav_file = "fixed.wav"
+    # fix_corrupted_wav
 
-    # # Save the audio file to disk
-    # filename = f'audio_{int(time.time())}.wav'  # Use current timestamp
-    # audio_file.save(filename)
 
-    # Process the audio file
-    # Process the audio file
-    m4a_path = 'uploaded.m4a'
-    audio_file.save(m4a_path)
+    # Use the converted WAV file path for recognition
+    recognized_text = recognize_audio(file)
+    # Your existing code continues...
 
-    conversion_result = convert(m4a_path)
-    if 'wav_filename' in conversion_result:
-        # Use the converted WAV file path for recognition
-        recognized_text = recognize_audio(conversion_result['wav_filename'])
-        # Your existing code continues...
+    openai.api_key = "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"
+    model = "gpt-3.5-turbo"
+    temperature = 0.9
+    message_list = []
+    system_message = {"role": "system", "content": "You are a prescption generator bot,(as it's an audio to text transcripted if there are any error or spelling mistake please rectify it) identify the date and year, name, gender, symptoms, medication, also suggestive activities "}
+    message_list.append(system_message)
+    user_message = {"role": "user", "content": recognized_text}
+    message_list.append(user_message)
+    response_message = openai.ChatCompletion.create(model=model, messages=message_list, temperature=temperature)
 
-        openai.api_key = "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"
-        model = "gpt-3.5-turbo"
-        temperature = 0.9
-        message_list = []
-        system_message = {"role": "system", "content": "You are a prescption generator bot,(as it's an audio to text transcripted if there are any error or spelling mistake please rectify it) identify the date and year, name, gender, symptoms, medication, also suggestive activities "}
-        message_list.append(system_message)
-        user_message = {"role": "user", "content": recognized_text}
-        message_list.append(user_message)
-        response_message = openai.ChatCompletion.create(model=model, messages=message_list, temperature=temperature)
-
-        response = response_message.choices[0].message.content
-        print(recognized_text)
-        return response, 200
+    response = response_message.choices[0].message.content
+    print(recognized_text)
+    return response, 200
     
-    return {"error": "no file supported"}
+    # return {"error": "no file supported"}
 
 def recognize_audio(audio_file):
     # Import necessary libraries
